@@ -15,6 +15,7 @@ public class EmployeeController {
 
     private final EmployeeService employeeService;
 
+    // UC4: Used autowired
     @Autowired
     public EmployeeController(EmployeeService employeeService) {
         this.employeeService = employeeService;
