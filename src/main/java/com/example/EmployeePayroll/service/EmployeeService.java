@@ -14,6 +14,7 @@ public class EmployeeService {
 
     private final EmployeeRepository employeeRepository;
 
+    // UC4: Used autowired
     @Autowired
     public EmployeeService(EmployeeRepository employeeRepository) {
         this.employeeRepository = employeeRepository;
