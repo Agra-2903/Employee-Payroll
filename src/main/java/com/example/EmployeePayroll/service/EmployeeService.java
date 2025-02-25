@@ -1,59 +1,71 @@
 package com.example.EmployeePayroll.service;
 
 import com.example.EmployeePayroll.dto.EmployeeDTO;
+import com.example.EmployeePayroll.exception.ResourceNotFoundException;
 import com.example.EmployeePayroll.model.Employee;
+import com.example.EmployeePayroll.repository.EmployeeRepository;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
+import java.util.stream.Collectors;
 
+@Slf4j // Lombok Logger
 @Service
 public class EmployeeService {
 
-    private final List<Employee> employeeList = new ArrayList<>();
-    private long idCounter = 1;
+    private final EmployeeRepository employeeRepository;
 
-    // Get all employees
+    @Autowired
+    public EmployeeService(EmployeeRepository employeeRepository) {
+        this.employeeRepository = employeeRepository;
+    }
+
     public List<EmployeeDTO> getAllEmployees() {
-        List<EmployeeDTO> employeeDTOList = new ArrayList<>();
-        for (Employee emp : employeeList) {
-            employeeDTOList.add(new EmployeeDTO(emp.getName(), emp.getSalary(), emp.getDepartment()));
-        }
-        return employeeDTOList;
+        log.info("Fetching all employees");
+        return employeeRepository.findAll()
+                .stream()
+                .map(emp -> new EmployeeDTO(emp.getName(), emp.getSalary(), emp.getDepartment()))
+                .collect(Collectors.toList());
     }
 
-    // Get employee by ID
     public EmployeeDTO getEmployeeById(Long id) {
-        Optional<Employee> employee = employeeList.stream().filter(emp -> emp.getId().equals(id)).findFirst();
-        if (employee.isPresent()) {
-            return new EmployeeDTO(employee.get().getName(), employee.get().getSalary(), employee.get().getDepartment());
-        }
-        throw new RuntimeException("Employee not found with ID: " + id);
+        log.info("Fetching employee with ID: {}", id);
+        Employee emp = employeeRepository.findById(id)
+                .orElseThrow(() -> {
+                    log.error("Employee not found with ID: {}", id);
+                    return new ResourceNotFoundException("Employee not found with ID: " + id);
+                });
+        return new EmployeeDTO(emp.getName(), emp.getSalary(), emp.getDepartment());
     }
 
-    // Add a new employee
     public EmployeeDTO addEmployee(EmployeeDTO employeeDTO) {
-        Employee newEmployee = new Employee(idCounter++, employeeDTO.getName(), employeeDTO.getSalary(), employeeDTO.getDepartment());
-        employeeList.add(newEmployee);
-        return new EmployeeDTO(newEmployee.getName(), newEmployee.getSalary(), newEmployee.getDepartment());
+        log.info("Adding new employee: {}", employeeDTO.getName());
+        Employee emp = new Employee(employeeDTO.getName(), employeeDTO.getSalary(), employeeDTO.getDepartment());
+        Employee savedEmp = employeeRepository.save(emp);
+        log.debug("Employee saved successfully with ID: {}", savedEmp.getId());
+        return new EmployeeDTO(savedEmp.getName(), savedEmp.getSalary(), savedEmp.getDepartment());
     }
 
-    // Update employee
     public EmployeeDTO updateEmployee(Long id, EmployeeDTO employeeDTO) {
-        for (Employee emp : employeeList) {
-            if (emp.getId().equals(id)) {
-                emp.setName(employeeDTO.getName());
-                emp.setSalary(employeeDTO.getSalary());
-                emp.setDepartment(employeeDTO.getDepartment());
-                return new EmployeeDTO(emp.getName(), emp.getSalary(), emp.getDepartment());
-            }
-        }
-        throw new RuntimeException("Employee not found with ID: " + id);
+        log.info("Updating employee with ID: {}", id);
+        Employee existingEmployee = employeeRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Employee not found with ID: " + id));
+
+        existingEmployee.setName(employeeDTO.getName());
+        existingEmployee.setSalary(employeeDTO.getSalary());
+        existingEmployee.setDepartment(employeeDTO.getDepartment());
+
+        Employee updatedEmp = employeeRepository.save(existingEmployee);
+        log.debug("Employee updated successfully with ID: {}", updatedEmp.getId());
+        return new EmployeeDTO(updatedEmp.getName(), updatedEmp.getSalary(), updatedEmp.getDepartment());
     }
 
-    // Delete employee
     public void deleteEmployee(Long id) {
-        employeeList.removeIf(emp -> emp.getId().equals(id));
+        log.warn("Deleting employee with ID: {}", id);
+        Employee existingEmployee = employeeRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Employee not found with ID: " + id));
+        employeeRepository.delete(existingEmployee);
+        log.info("Employee deleted successfully");
     }
 }
