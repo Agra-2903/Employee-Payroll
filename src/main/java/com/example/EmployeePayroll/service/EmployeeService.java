@@ -62,10 +62,14 @@ public class EmployeeService {
     }
 
     public void deleteEmployee(Long id) {
-        log.warn("Deleting employee with ID: {}", id);
+        log.warn("Attempting to delete employee with ID: {}", id);
         Employee existingEmployee = employeeRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Employee not found with ID: " + id));
+                .orElseThrow(() -> {
+                    log.error("Employee not found with ID: {}", id);
+                    return new ResourceNotFoundException("Employee not found with ID: " + id);
+                });
+
         employeeRepository.delete(existingEmployee);
-        log.info("Employee deleted successfully");
+        log.info("Employee with ID: {} deleted successfully", id);
     }
 }
