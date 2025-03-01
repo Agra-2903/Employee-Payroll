@@ -3,13 +3,14 @@ package com.example.EmployeePayroll.controller;
 import com.example.EmployeePayroll.dto.EmployeeDTO;
 import com.example.EmployeePayroll.model.Employee;
 import com.example.EmployeePayroll.service.EmployeeService;
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
 @RestController
-@RequestMapping("/employees")
+@RequestMapping("/api/employees")
 @CrossOrigin(origins = "http://localhost:3000") // Allow frontend access
 public class EmployeeController {
 
@@ -35,13 +36,13 @@ public class EmployeeController {
 
     // Add new employee
     @PostMapping
-    public EmployeeDTO addEmployee(@RequestBody EmployeeDTO employeeDTO) {
+    public EmployeeDTO addEmployee(@Valid @RequestBody EmployeeDTO employeeDTO) {
         return employeeService.addEmployee(employeeDTO);
     }
 
     // Update existing employee
     @PutMapping("/{id}")
-    public EmployeeDTO updateEmployee(@PathVariable Long id, @RequestBody EmployeeDTO employeeDTO) {
+    public EmployeeDTO updateEmployee(@PathVariable Long id,@Valid @RequestBody EmployeeDTO employeeDTO) {
         return employeeService.updateEmployee(id, employeeDTO);
     }
 
